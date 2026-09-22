@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Мои задачи</string>
+
+    <string name="main_title">Мои задачи</string>
+
+    <string name="task_1">Подготовить отчёт</string>
+    <string name="task_2">Изучить основы Kotlin</string>
+    <string name="task_3">Создать интерфейс приложения</string>
+    <string name="task_4">Настроить Android Studio</string>
+    <string name="task_5">Подготовиться к защите</string>
+</resources>
