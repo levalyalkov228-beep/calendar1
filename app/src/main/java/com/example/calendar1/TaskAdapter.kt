@@ -38,7 +38,7 @@ class TaskAdapter(
         holder.title.text = task.title
         holder.date.text = task.date
 
-        if (task.completed) {
+        if (task.isDone) {
             holder.status.text = "✓ Выполнено"
         } else {
             holder.status.text = "○ Не выполнено"
