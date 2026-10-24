@@ -1,5 +1,6 @@
 package com.example.calendar1
 
+import androidx.lifecycle.LiveData
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
@@ -19,8 +20,11 @@ interface TaskDao {
     suspend fun deleteTask(task: Task)
 
     @Query("SELECT * FROM tasks")
-    suspend fun getAllTasks(): List<Task>
+    fun getAllTasks(): LiveData<List<Task>>
 
     @Query("SELECT * FROM tasks WHERE date = :date")
     suspend fun getTasksByDate(date: String): List<Task>
+
+    @Query("SELECT COUNT(*) FROM tasks")
+    suspend fun getTaskCount(): Int
 }

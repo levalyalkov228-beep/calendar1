@@ -7,22 +7,29 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
 class TaskAdapter(
-    private val tasks: List<Task>,
+    initialTasks: List<Task>,
     private val onTaskClick: (Task) -> Unit
 ) : RecyclerView.Adapter<TaskAdapter.TaskViewHolder>() {
 
-    class TaskViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    private val tasks = initialTasks.toMutableList()
 
-        val title: TextView = itemView.findViewById(R.id.textTaskTitle)
-        val date: TextView = itemView.findViewById(R.id.textTaskDate)
-        val status: TextView = itemView.findViewById(R.id.textTaskStatus)
+    class TaskViewHolder(itemView: View) :
+        RecyclerView.ViewHolder(itemView) {
+
+        val title: TextView =
+            itemView.findViewById(R.id.textTaskTitle)
+
+        val date: TextView =
+            itemView.findViewById(R.id.textTaskDate)
+
+        val status: TextView =
+            itemView.findViewById(R.id.textTaskStatus)
     }
 
     override fun onCreateViewHolder(
         parent: ViewGroup,
         viewType: Int
     ): TaskViewHolder {
-
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_task, parent, false)
 
@@ -38,10 +45,10 @@ class TaskAdapter(
         holder.title.text = task.title
         holder.date.text = task.date
 
-        if (task.isDone) {
-            holder.status.text = "✓ Выполнено"
+        holder.status.text = if (task.isDone) {
+            "✓ Выполнено"
         } else {
-            holder.status.text = "○ Не выполнено"
+            "○ Не выполнено"
         }
 
         holder.itemView.setOnClickListener {
@@ -49,7 +56,11 @@ class TaskAdapter(
         }
     }
 
-    override fun getItemCount(): Int {
-        return tasks.size
+    override fun getItemCount(): Int = tasks.size
+
+    fun updateTasks(newTasks: List<Task>) {
+        tasks.clear()
+        tasks.addAll(newTasks)
+        notifyDataSetChanged()
     }
 }
