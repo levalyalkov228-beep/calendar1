@@ -9,8 +9,7 @@ class TaskViewModel(
     private val repository: TaskRepository
 ) : ViewModel() {
 
-    val allTasks: LiveData<List<Task>> =
-        repository.allTasks
+    val allTasks: LiveData<List<Task>> = repository.allTasks
 
     fun addTask(task: Task) {
         viewModelScope.launch {
@@ -27,6 +26,25 @@ class TaskViewModel(
     fun deleteTask(task: Task) {
         viewModelScope.launch {
             repository.deleteTask(task)
+        }
+    }
+
+    fun getTasksByDate(
+        date: String,
+        onResult: (List<Task>) -> Unit
+    ) {
+        viewModelScope.launch {
+            val tasks = repository.getTasksByDate(date)
+            onResult(tasks)
+        }
+    }
+
+    fun getDatesWithTasks(
+        onResult: (Set<String>) -> Unit
+    ) {
+        viewModelScope.launch {
+            val dates = repository.getDatesWithTasks()
+            onResult(dates.toSet())
         }
     }
 

@@ -2,30 +2,25 @@ package com.example.calendar1
 
 import androidx.lifecycle.LiveData
 
-class TaskRepository(
-    private val taskDao: TaskDao
-) {
+class TaskRepository(private val taskDao: TaskDao) {
 
-    val allTasks: LiveData<List<Task>> =
-        taskDao.getAllTasks()
+    val allTasks: LiveData<List<Task>> = taskDao.getAllTasks()
 
-    suspend fun getTaskCount(): Int {
-        return taskDao.getTaskCount()
-    }
+    suspend fun getTaskCount(): Int =
+        taskDao.getTaskCount()
 
-    suspend fun addTask(task: Task) {
+    suspend fun addTask(task: Task) =
         taskDao.insertTask(task)
-    }
 
-    suspend fun updateTask(task: Task) {
+    suspend fun updateTask(task: Task) =
         taskDao.updateTask(task)
-    }
 
-    suspend fun deleteTask(task: Task) {
+    suspend fun deleteTask(task: Task) =
         taskDao.deleteTask(task)
-    }
 
-    suspend fun getTasksByDate(date: String): List<Task> {
-        return taskDao.getTasksByDate(date)
-    }
+    suspend fun getTasksByDate(date: String): List<Task> =
+        taskDao.getTasksByDate(date)
+
+    suspend fun getDatesWithTasks(): List<String> =
+        taskDao.getDatesWithTasks()
 }

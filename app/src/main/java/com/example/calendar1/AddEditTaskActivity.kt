@@ -55,7 +55,10 @@ class AddEditTaskActivity : AppCompatActivity() {
             loadTaskData()
         } else {
             formTitle.text = "Новая задача"
-            selectedDate = getCurrentDate()
+
+            selectedDate = intent.getStringExtra("date")
+                ?: getCurrentDate()
+
             updateDateButton()
             updateTimeButton()
         }

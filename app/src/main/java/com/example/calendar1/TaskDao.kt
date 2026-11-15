@@ -22,8 +22,11 @@ interface TaskDao {
     @Query("SELECT * FROM tasks")
     fun getAllTasks(): LiveData<List<Task>>
 
-    @Query("SELECT * FROM tasks WHERE date = :date")
+    @Query("SELECT * FROM tasks WHERE date = :date ORDER BY time ASC")
     suspend fun getTasksByDate(date: String): List<Task>
+
+    @Query("SELECT DISTINCT date FROM tasks")
+    suspend fun getDatesWithTasks(): List<String>
 
     @Query("SELECT COUNT(*) FROM tasks")
     suspend fun getTaskCount(): Int
