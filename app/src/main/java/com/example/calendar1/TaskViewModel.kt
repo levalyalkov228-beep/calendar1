@@ -11,15 +11,23 @@ class TaskViewModel(
 
     val allTasks: LiveData<List<Task>> = repository.allTasks
 
-    fun addTask(task: Task) {
+    fun addTask(
+        task: Task,
+        onSaved: (Int) -> Unit = {}
+    ) {
         viewModelScope.launch {
-            repository.addTask(task)
+            val id = repository.addTask(task).toInt()
+            onSaved(id)
         }
     }
 
-    fun updateTask(task: Task) {
+    fun updateTask(
+        task: Task,
+        onSaved: () -> Unit = {}
+    ) {
         viewModelScope.launch {
             repository.updateTask(task)
+            onSaved()
         }
     }
 
@@ -34,8 +42,7 @@ class TaskViewModel(
         onResult: (List<Task>) -> Unit
     ) {
         viewModelScope.launch {
-            val tasks = repository.getTasksByDate(date)
-            onResult(tasks)
+            onResult(repository.getTasksByDate(date))
         }
     }
 
@@ -43,8 +50,7 @@ class TaskViewModel(
         onResult: (Set<String>) -> Unit
     ) {
         viewModelScope.launch {
-            val dates = repository.getDatesWithTasks()
-            onResult(dates.toSet())
+            onResult(repository.getDatesWithTasks().toSet())
         }
     }
 
@@ -96,3 +102,4 @@ class TaskViewModel(
         }
     }
 }
+

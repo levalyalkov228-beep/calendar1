@@ -1,9 +1,13 @@
-
 package com.example.calendar1
 
+import android.app.AlarmManager
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
@@ -38,7 +42,8 @@ class AddEditTaskActivity : AppCompatActivity() {
 
         val factory = TaskViewModelFactory(application)
         taskViewModel = ViewModelProvider(
-            this, factory
+            this,
+            factory
         )[TaskViewModel::class.java]
 
         titleInput = findViewById(R.id.editTaskTitle)
@@ -73,6 +78,35 @@ class AddEditTaskActivity : AppCompatActivity() {
 
         saveButton.setOnClickListener {
             saveTask()
+        }
+
+        requestExactAlarmAccess()
+    }
+
+    private fun requestExactAlarmAccess() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val alarmManager = getSystemService(
+                AlarmManager::class.java
+            )
+
+            if (!alarmManager.canScheduleExactAlarms()) {
+                Toast.makeText(
+                    this,
+                    "Для точных напоминаний разрешите доступ к будильникам",
+                    Toast.LENGTH_LONG
+                ).show()
+
+                try {
+                    val intent = Intent(
+                        Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
+                        Uri.parse("package:$packageName")
+                    )
+                    startActivity(intent)
+                } catch (_: Exception) {
+                    // Если экран настроек недоступен,
+                    // будет использован запасной вариант AlarmManager.
+                }
+            }
         }
     }
 
@@ -121,6 +155,7 @@ class AddEditTaskActivity : AppCompatActivity() {
                 "dd.MM.yyyy",
                 Locale.getDefault()
             )
+
             val parsedDate = format.parse(selectedDate)
 
             if (parsedDate != null) {
@@ -197,21 +232,43 @@ class AddEditTaskActivity : AppCompatActivity() {
             isDone = completedCheckBox.isChecked
         )
 
+        saveButton.isEnabled = false
+
         if (taskId == -1) {
-            taskViewModel.addTask(task)
-            Toast.makeText(
-                this,
-                "Задача добавлена",
-                Toast.LENGTH_SHORT
-            ).show()
+            taskViewModel.addTask(task) { newId ->
+                val savedTask = task.copy(id = newId)
+                val exact = TaskAlarmManager.schedule(
+                    this,
+                    savedTask
+                )
+
+                showSaveResult(exact)
+            }
         } else {
-            taskViewModel.updateTask(task)
-            Toast.makeText(
-                this,
-                "Задача обновлена",
-                Toast.LENGTH_SHORT
-            ).show()
+            TaskAlarmManager.cancel(this, taskId)
+
+            taskViewModel.updateTask(task) {
+                val exact = TaskAlarmManager.schedule(
+                    this,
+                    task
+                )
+
+                showSaveResult(exact)
+            }
         }
+    }
+
+    private fun showSaveResult(exactAlarm: Boolean) {
+        val message = when {
+            exactAlarm -> "Задача сохранена. Напоминание установлено"
+            else -> "Задача сохранена. Напоминание может сработать неточно"
+        }
+
+        Toast.makeText(
+            this,
+            message,
+            Toast.LENGTH_LONG
+        ).show()
 
         finish()
     }

@@ -1,5 +1,11 @@
 package com.example.calendar1
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
@@ -40,9 +46,39 @@ class MainActivity : AppCompatActivity() {
     private val monthFormatter =
         DateTimeFormatter.ofPattern("LLLL yyyy", Locale("ru"))
 
+    private val notificationPermissionLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { granted ->
+            if (!granted) {
+                Toast.makeText(
+                    this,
+                    "Разрешение на уведомления не предоставлено",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val permission = Manifest.permission.POST_NOTIFICATIONS
+
+            if (
+                ContextCompat.checkSelfPermission(
+                    this,
+                    permission
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                notificationPermissionLauncher.launch(permission)
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        NotificationHelper.createNotificationChannel(this)
+        requestNotificationPermission()
 
         val factory = TaskViewModelFactory(application)
         taskViewModel = ViewModelProvider(
@@ -240,6 +276,7 @@ class MainActivity : AppCompatActivity() {
                         "Вы действительно хотите удалить задачу \"${task.title}\"?"
                     )
                     .setPositiveButton("Удалить") { _, _ ->
+                        TaskAlarmManager.cancel(this@MainActivity, task.id)
                         taskViewModel.deleteTask(task)
                     }
                     .setNegativeButton("Отмена") { _, _ ->

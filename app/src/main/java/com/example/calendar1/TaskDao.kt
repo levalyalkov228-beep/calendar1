@@ -11,7 +11,7 @@ import androidx.room.Update
 interface TaskDao {
 
     @Insert
-    suspend fun insertTask(task: Task)
+    suspend fun insertTask(task: Task): Long
 
     @Update
     suspend fun updateTask(task: Task)

@@ -9,7 +9,7 @@ class TaskRepository(private val taskDao: TaskDao) {
     suspend fun getTaskCount(): Int =
         taskDao.getTaskCount()
 
-    suspend fun addTask(task: Task) =
+    suspend fun addTask(task: Task): Long =
         taskDao.insertTask(task)
 
     suspend fun updateTask(task: Task) =
