@@ -63,4 +63,7 @@ class TaskAdapter(
         tasks.addAll(newTasks)
         notifyDataSetChanged()
     }
+    fun getTaskAt(position: Int): Task {
+        return tasks[position]
+    }
 }

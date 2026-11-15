@@ -2,8 +2,10 @@ package com.example.calendar1
 
 import android.content.Intent
 import android.os.Bundle
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -14,35 +16,26 @@ class MainActivity : AppCompatActivity() {
     private lateinit var adapter: TaskAdapter
     private lateinit var taskViewModel: TaskViewModel
 
-    private val tasks = mutableListOf<Task>()
-    private var selectedTaskId = -1
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         val factory = TaskViewModelFactory(application)
+
         taskViewModel = ViewModelProvider(
             this,
             factory
         )[TaskViewModel::class.java]
 
         recyclerView = findViewById(R.id.tasksRecyclerView)
+
         setupRecyclerView()
+        setupSwipeToDelete()
 
-        // Получаем обновления списка из базы данных Room.
         taskViewModel.allTasks.observe(this) { updatedTasks ->
-            tasks.clear()
-            tasks.addAll(updatedTasks)
             adapter.updateTasks(updatedTasks)
-
-            android.util.Log.d(
-                "ROOM_COUNT",
-                "Количество задач в базе: ${updatedTasks.size}"
-            )
         }
 
-        // Начальные задачи создаются только при первом создании Activity.
         if (savedInstanceState == null) {
             taskViewModel.seedInitialTasks()
         }
@@ -51,8 +44,11 @@ class MainActivity : AppCompatActivity() {
             findViewById<FloatingActionButton>(R.id.addTaskButton)
 
         addTaskButton.setOnClickListener {
-            val intent = Intent(this, AddTaskActivity::class.java)
-            startActivityForResult(intent, REQUEST_ADD_TASK)
+            val intent = Intent(
+                this,
+                AddEditTaskActivity::class.java
+            )
+            startActivity(intent)
         }
     }
 
@@ -60,71 +56,72 @@ class MainActivity : AppCompatActivity() {
         recyclerView.layoutManager = LinearLayoutManager(this)
 
         adapter = TaskAdapter(emptyList()) { task ->
-            // Запоминаем ID, чтобы обновить именно выбранную задачу.
-            selectedTaskId = task.id
 
-            val intent = Intent(this, TaskDetailActivity::class.java)
+            val intent = Intent(
+                this,
+                AddEditTaskActivity::class.java
+            )
+
+            intent.putExtra("task_id", task.id)
             intent.putExtra("title", task.title)
             intent.putExtra("description", task.description)
             intent.putExtra("date", task.date)
-            intent.putExtra("completed", task.isDone)
+            intent.putExtra("time", task.time)
+            intent.putExtra("is_done", task.isDone)
 
-            startActivityForResult(intent, REQUEST_TASK_DETAIL)
+            startActivity(intent)
         }
 
         recyclerView.adapter = adapter
     }
 
-    @Deprecated("Используется существующий механизм возврата результата")
-    override fun onActivityResult(
-        requestCode: Int,
-        resultCode: Int,
-        data: Intent?
-    ) {
-        super.onActivityResult(requestCode, resultCode, data)
+    private fun setupSwipeToDelete() {
 
-        if (resultCode != RESULT_OK || data == null) {
-            return
-        }
+        val swipeCallback = object :
+            ItemTouchHelper.SimpleCallback(
+                0,
+                ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
+            ) {
 
-        when (requestCode) {
-            REQUEST_TASK_DETAIL -> {
-                val completed =
-                    data.getBooleanExtra("completed", false)
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean {
+                return false
+            }
 
-                if (completed) {
-                    val selectedTask =
-                        tasks.find { it.id == selectedTaskId }
+            override fun onSwiped(
+                viewHolder: RecyclerView.ViewHolder,
+                direction: Int
+            ) {
+                val position = viewHolder.bindingAdapterPosition
 
-                    if (selectedTask != null && !selectedTask.isDone) {
-                        taskViewModel.updateTask(
-                            selectedTask.copy(isDone = true)
-                        )
-                    }
+                if (position == RecyclerView.NO_POSITION) {
+                    return
                 }
-            }
 
-            REQUEST_ADD_TASK -> {
-                val title = data.getStringExtra("title") ?: ""
-                val description =
-                    data.getStringExtra("description") ?: ""
-                val date = data.getStringExtra("date") ?: ""
+                val task = adapter.getTaskAt(position)
 
-                val newTask = Task(
-                    title = title,
-                    description = description,
-                    isDone = false,
-                    date = date,
-                    time = "12:00"
-                )
-
-                taskViewModel.addTask(newTask)
+                AlertDialog.Builder(this@MainActivity)
+                    .setTitle("Удаление задачи")
+                    .setMessage(
+                        "Вы действительно хотите удалить задачу \"${task.title}\"?"
+                    )
+                    .setPositiveButton("Удалить") { _, _ ->
+                        taskViewModel.deleteTask(task)
+                    }
+                    .setNegativeButton("Отмена") { _, _ ->
+                        adapter.notifyItemChanged(position)
+                    }
+                    .setOnCancelListener {
+                        adapter.notifyItemChanged(position)
+                    }
+                    .show()
             }
         }
-    }
 
-    companion object {
-        private const val REQUEST_TASK_DETAIL = 100
-        private const val REQUEST_ADD_TASK = 200
+        ItemTouchHelper(swipeCallback)
+            .attachToRecyclerView(recyclerView)
     }
 }
